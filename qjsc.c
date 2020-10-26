@@ -339,7 +339,7 @@ static const char main_c_template2[] =
 
 #define PROG_NAME "qjsc"
 
-void help(void)
+static void help(void)
 {
     printf("QuickJS Compiler version " CONFIG_VERSION "\n"
            "usage: " PROG_NAME " [options] [files]\n"
@@ -481,7 +481,7 @@ typedef enum {
     OUTPUT_EXECUTABLE,
 } OutputTypeEnum;
 
-int main(int argc, char **argv)
+int qjsc_main(int argc, char **argv)
 {
     int c, i, verbose;
     const char *out_filename, *cname;

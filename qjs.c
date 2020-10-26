@@ -22,6 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -280,7 +283,7 @@ static const JSMallocFunctions trace_mf = {
 
 #define PROG_NAME "qjs"
 
-void help(void)
+static void help(void)
 {
     printf("QuickJS version " CONFIG_VERSION "\n"
            "usage: " PROG_NAME " [options] [file [args]]\n"
@@ -304,7 +307,7 @@ void help(void)
     exit(1);
 }
 
-int main(int argc, char **argv)
+int qjs_main(int argc, char **argv)
 {
     JSRuntime *rt;
     JSContext *ctx;
@@ -524,9 +527,11 @@ int main(int argc, char **argv)
             if (eval_file(ctx, filename, module))
                 goto fail;
         }
+#if !defined(ARDUINO) 
         if (interactive) {
             js_std_eval_binary(ctx, qjsc_repl, qjsc_repl_size, 0);
         }
+#endif
         js_std_loop(ctx);
     }
     

@@ -22,6 +22,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -71,6 +74,11 @@ typedef sig_t sighandler_t;
 #include "cutils.h"
 #include "list.h"
 #include "quickjs-libc.h"
+
+#if defined(ARDUINO)
+#define popen fopen
+#define pclose fclose
+#endif
 
 /* TODO:
    - add socket calls
@@ -531,7 +539,7 @@ int js_module_set_import_meta(JSContext *ctx, JSValueConst func_val,
         return -1;
     if (!strchr(module_name, ':')) {
         strcpy(buf, "file://");
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ARDUINO)
         /* realpath() cannot be used with modules compiled with qjsc
            because the corresponding module source code is not
            necessarily present */
@@ -2259,6 +2267,7 @@ static JSValue make_string_error(JSContext *ctx,
     return make_obj_error(ctx, JS_NewString(ctx, buf), err);
 }
 
+#if !defined(ARDUINO)
 /* return [cwd, errorcode] */
 static JSValue js_os_getcwd(JSContext *ctx, JSValueConst this_val,
                             int argc, JSValueConst *argv)
@@ -2288,6 +2297,7 @@ static JSValue js_os_chdir(JSContext *ctx, JSValueConst this_val,
     JS_FreeCString(ctx, target);
     return JS_NewInt32(ctx, err);
 }
+#endif
 
 static JSValue js_os_mkdir(JSContext *ctx, JSValueConst this_val,
                            int argc, JSValueConst *argv)
@@ -2377,7 +2387,7 @@ static JSValue js_os_stat(JSContext *ctx, JSValueConst this_val,
     path = JS_ToCString(ctx, argv[0]);
     if (!path)
         return JS_EXCEPTION;
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(ARDUINO)
     res = stat(path, &st);
 #else
     if (is_lstat)
@@ -2466,6 +2476,7 @@ static void ms_to_timeval(struct timeval *tv, uint64_t v)
 }
 #endif
 
+#if !defined(ARDUINO)
 static JSValue js_os_utimes(JSContext *ctx, JSValueConst this_val,
                             int argc, JSValueConst *argv)
 {
@@ -2498,8 +2509,9 @@ static JSValue js_os_utimes(JSContext *ctx, JSValueConst this_val,
     JS_FreeCString(ctx, path);
     return JS_NewInt32(ctx, ret);
 }
+#endif
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ARDUINO)
 
 /* return [path, errorcode] */
 static JSValue js_os_realpath(JSContext *ctx, JSValueConst this_val,
@@ -3492,8 +3504,10 @@ static const JSCFunctionListEntry js_os_funcs[] = {
     JS_CFUNC_DEF("setTimeout", 2, js_os_setTimeout ),
     JS_CFUNC_DEF("clearTimeout", 1, js_os_clearTimeout ),
     JS_PROP_STRING_DEF("platform", OS_PLATFORM, 0 ),
+#if !defined(ARDUINO)
     JS_CFUNC_DEF("getcwd", 0, js_os_getcwd ),
     JS_CFUNC_DEF("chdir", 0, js_os_chdir ),
+#endif
     JS_CFUNC_DEF("mkdir", 1, js_os_mkdir ),
     JS_CFUNC_DEF("readdir", 1, js_os_readdir ),
     /* st_mode constants */
@@ -3510,8 +3524,10 @@ static const JSCFunctionListEntry js_os_funcs[] = {
     OS_FLAG(S_ISUID),
 #endif
     JS_CFUNC_MAGIC_DEF("stat", 1, js_os_stat, 0 ),
+#if !defined(ARDUINO)
     JS_CFUNC_DEF("utimes", 3, js_os_utimes ),
-#if !defined(_WIN32)
+#endif
+#if !defined(_WIN32) && !defined(ARDUINO)
     JS_CFUNC_MAGIC_DEF("lstat", 1, js_os_stat, 1 ),
     JS_CFUNC_DEF("realpath", 1, js_os_realpath ),
     JS_CFUNC_DEF("symlink", 2, js_os_symlink ),

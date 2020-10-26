@@ -1,5 +1,6 @@
 #include "Arduino.h"
 #include <fenv.h>
+#include "netsocket/NetworkStack.h"
 
 /*
  * The following symbol is simply the bitwise-inclusive OR of all floating-point
@@ -70,3 +71,30 @@ extern "C" int pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const
 extern "C" int clock_gettime(clockid_t clk_id, struct timespec *tp) {
 	return millis();
 }
+
+extern "C" int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
+                struct timeval *timeout) {
+	return ::select(FD_SETSIZE, readset, NULL, NULL, timeout);
+}
+
+/*
+pipe
+readlink
+lstat
+getcwd
+dup2
+dup
+nanosleep
+chdir
+symlink
+sysconf
+chdir
+setuid
+setgid
+waitpid
+pclose
+utimes
+popen
+realpath
+select
+*/
