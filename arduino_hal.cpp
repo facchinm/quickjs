@@ -69,7 +69,10 @@ extern "C" int pthread_cond_timedwait(pthread_cond_t *, pthread_mutex_t *, const
 }
 
 extern "C" int clock_gettime(clockid_t clk_id, struct timespec *tp) {
-	return millis();
+	long time = millis();
+	tp->tv_sec = time / 1000;
+	tp->tv_nsec = (time - tp->tv_sec * 1000) * 1000;
+	return 0;
 }
 
 extern "C" int select(int maxfdp1, fd_set *readset, fd_set *writeset, fd_set *exceptset,
