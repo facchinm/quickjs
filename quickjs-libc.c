@@ -36,15 +36,16 @@
 #include <signal.h>
 #include <limits.h>
 #include <sys/stat.h>
+#if defined(ARDUINO)
+#include <platform/mbed_retarget.h>
+#else
 #include <dirent.h>
+#endif
 #if defined(_WIN32)
 #include <windows.h>
 #include <conio.h>
 #include <utime.h>
 #else
-#include <dlfcn.h>
-#include <termios.h>
-#include <sys/ioctl.h>
 #include <sys/wait.h>
 
 #if defined(__APPLE__)
@@ -57,7 +58,7 @@ typedef sig_t sighandler_t;
 
 #endif
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && !defined(ARDUINO)
 /* enable the os.Worker API. IT relies on POSIX threads */
 #define USE_WORKER
 #endif
@@ -453,7 +454,7 @@ typedef JSModuleDef *(JSInitModuleFunc)(JSContext *ctx,
                                         const char *module_name);
 
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(ARDUINO)
 static JSModuleDef *js_module_loader_so(JSContext *ctx,
                                         const char *module_name)
 {
@@ -1573,6 +1574,8 @@ static JSValue js_os_isatty(JSContext *ctx, JSValueConst this_val,
     return JS_NewBool(ctx, isatty(fd) == 1);
 }
 
+#if !defined(ARDUINO)
+
 #if defined(_WIN32)
 static JSValue js_os_ttyGetWinSize(JSContext *ctx, JSValueConst this_val,
                                    int argc, JSValueConst *argv)
@@ -1669,6 +1672,7 @@ static JSValue js_os_ttySetRaw(JSContext *ctx, JSValueConst this_val,
 }
 
 #endif /* !_WIN32 */
+#endif /* ARDUINO */
 
 static JSValue js_os_remove(JSContext *ctx, JSValueConst this_val,
                              int argc, JSValueConst *argv)
@@ -1799,7 +1803,7 @@ static void os_signal_handler(int sig_num)
     os_pending_signals |= ((uint64_t)1 << sig_num);
 }
 
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(ARDUINO)
 typedef void (*sighandler_t)(int sig_num);
 #endif
 
@@ -2419,7 +2423,7 @@ static JSValue js_os_stat(JSContext *ctx, JSValueConst this_val,
                                   JS_NewInt64(ctx, st.st_blocks),
                                   JS_PROP_C_W_E);
 #endif
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(ARDUINO)
         JS_DefinePropertyValueStr(ctx, obj, "atime",
                                   JS_NewInt64(ctx, (int64_t)st.st_atime * 1000),
                                   JS_PROP_C_W_E);
@@ -3457,8 +3461,10 @@ static const JSCFunctionListEntry js_os_funcs[] = {
     JS_CFUNC_MAGIC_DEF("read", 4, js_os_read_write, 0 ),
     JS_CFUNC_MAGIC_DEF("write", 4, js_os_read_write, 1 ),
     JS_CFUNC_DEF("isatty", 1, js_os_isatty ),
+#if !defined(ARDUINO)
     JS_CFUNC_DEF("ttyGetWinSize", 1, js_os_ttyGetWinSize ),
     JS_CFUNC_DEF("ttySetRaw", 1, js_os_ttySetRaw ),
+#endif
     JS_CFUNC_DEF("remove", 1, js_os_remove ),
     JS_CFUNC_DEF("rename", 2, js_os_rename ),
     JS_CFUNC_MAGIC_DEF("setReadHandler", 2, js_os_setReadHandler, 0 ),

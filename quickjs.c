@@ -1661,7 +1661,7 @@ static inline size_t js_def_malloc_usable_size(void *ptr)
     return malloc_size(ptr);
 #elif defined(_WIN32)
     return _msize(ptr);
-#elif defined(EMSCRIPTEN)
+#elif defined(EMSCRIPTEN) || defined(ARDUINO)
     return 0;
 #elif defined(__linux__)
     return malloc_usable_size(ptr);
@@ -1735,7 +1735,7 @@ static const JSMallocFunctions def_malloc_funcs = {
     malloc_size,
 #elif defined(_WIN32)
     (size_t (*)(const void *))_msize,
-#elif defined(EMSCRIPTEN)
+#elif defined(EMSCRIPTEN) || defined(ARDUINO)
     NULL,
 #elif defined(__linux__)
     (size_t (*)(const void *))malloc_usable_size,
@@ -41599,7 +41599,7 @@ static JSValue js___date_clock(JSContext *ctx, JSValueConst this_val,
 /* OS dependent. d = argv[0] is in ms from 1970. Return the difference
    between local time and UTC time 'd' in minutes */
 static int getTimezoneOffset(int64_t time) {
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(ARDUINO)
     /* XXX: TODO */
     return 0;
 #else
@@ -53323,6 +53323,10 @@ typedef struct JSAtomicsWaiter {
     pthread_cond_t cond;
     int32_t *ptr;
 } JSAtomicsWaiter;
+
+#if defined(ARDUINO)
+#define PTHREAD_MUTEX_INITIALIZER _PTHREAD_MUTEX_INITIALIZER
+#endif
 
 static pthread_mutex_t js_atomics_mutex = PTHREAD_MUTEX_INITIALIZER;
 static struct list_head js_atomics_waiter_list =
